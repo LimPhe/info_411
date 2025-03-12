@@ -134,8 +134,7 @@ function displayConversationSelector($user_id, $connexion) {
             
             newConvRadio.addEventListener('change', toggleConversationList);
             loadConvRadio.addEventListener('change', toggleConversationList);
-            
-            
+
             toggleConversationList();
         });
     </script>
