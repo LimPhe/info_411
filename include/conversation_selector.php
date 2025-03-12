@@ -1,8 +1,6 @@
 <?php
 
-@param int 
-@param mysqli 
-@return int 
+
  
 function selectConversation($user_id, $connexion) {
     
@@ -47,12 +45,9 @@ function selectConversation($user_id, $connexion) {
     return 0;
 }
 
-/**
- * Affiche le formulaire de sélection de conversation
- * 
- * @param int $user_id ID de l'utilisateur actuel
- * @param mysqli $connexion Connexion à la base de données
- */
+
+ 
+
 function displayConversationSelector($user_id, $connexion) {
 
     $query = $connexion->prepare("
@@ -123,7 +118,7 @@ function displayConversationSelector($user_id, $connexion) {
     </div>
     
     <script>
-        // Script pour afficher/masquer la liste des conversations
+        
         document.addEventListener('DOMContentLoaded', function() {
             const newConvRadio = document.getElementById('new_conversation');
             const loadConvRadio = document.getElementById('load_conversation');
@@ -140,7 +135,7 @@ function displayConversationSelector($user_id, $connexion) {
             newConvRadio.addEventListener('change', toggleConversationList);
             loadConvRadio.addEventListener('change', toggleConversationList);
             
-            // Vérifier l'état initial
+            
             toggleConversationList();
         });
     </script>
