@@ -30,6 +30,3 @@ CREATE TABLE messages (
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
-
--- Table des réponses prédéfinies
-CREATE TABLE predefined
