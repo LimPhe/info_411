@@ -1,5 +1,5 @@
 <footer>
-    <p>&copy; 2025 Chatbot. Tous droits réservés.</p>
+    <p>&copy; Billy and Bouli Incorporated LLC, Aucun droits réservés</s>.</p>
 </footer>
 </body>
 </html>

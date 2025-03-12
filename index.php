@@ -1,6 +1,4 @@
 <?php
-
-<?php
 require_once 'include/connexion.php';
 require_once 'include/fonctions.php';
 
