@@ -2,7 +2,7 @@
 require_once 'include/connexion.php';
 require_once 'include/fonctions.php';
 // Inclure le nouveau fichier contenant les fonctions de sélection de conversation
-require_once 'include/conversation_selector.php'; // Créez ce fichier avec le code de l'artefact précédent
+require_once 'include/conversation_selector.php';
 
 session_start();
 
@@ -19,37 +19,38 @@ function preventFormResubmission() {
     return $token;
 }
 
-// Vérifier si une conversation est déjà sélectionnée dans la session
-if (!isset($_SESSION['selected_conversation_id'])) {
-    $_SESSION['conversation_selection_mode'] = true;
-    $_SESSION['selected_conversation_id'] = 0;
-}
-
-// Appliquer la sélection de conversation si nous sommes en mode sélection
-if (isset($_SESSION['conversation_selection_mode']) && $_SESSION['conversation_selection_mode']) {
-    $selected_conversation = selectConversation($user_id, $CONNEXION);
+// Vérifier si une conversation est spécifiée dans l'URL
+$conversation_id = 0;
+if (isset($_GET['conversation_id'])) {
+    $conv_id = intval($_GET['conversation_id']);
     
-    if ($selected_conversation > 0) {
-        // Une conversation a été sélectionnée ou créée
-        $_SESSION['selected_conversation_id'] = $selected_conversation;
-        $_SESSION['conversation_selection_mode'] = false;
+    // Vérifier que la conversation existe et appartient à l'utilisateur
+    $query = $CONNEXION->prepare("
+        SELECT id FROM conversations 
+        WHERE id = ? AND user_id = ?
+    ");
+    $query->bind_param('ii', $conv_id, $user_id);
+    $query->execute();
+    $result = $query->get_result();
+    
+    if ($result->num_rows > 0) {
+        $conversation_id = $conv_id;
     }
 }
 
 // Si l'utilisateur a explicitement demandé à changer de conversation
 if (isset($_GET['action']) && $_GET['action'] === 'change_conversation') {
-    $_SESSION['conversation_selection_mode'] = true;
-    $_SESSION['selected_conversation_id'] = 0;
+    $conversation_id = 0;  // Forcer l'affichage du sélecteur
 }
 
 // Traiter l'envoi d'un message uniquement si une conversation est sélectionnée
-if (!$_SESSION['conversation_selection_mode'] && 
+if ($conversation_id > 0 && 
     $_SERVER['REQUEST_METHOD'] === 'POST' && 
     isset($_POST['message']) && 
     isset($_POST['form_token']) && 
+    isset($_SESSION['form_token']) && 
     $_POST['form_token'] === $_SESSION['form_token']) {
     
-    $conversation_id = $_SESSION['selected_conversation_id'];
     $user_message = mysqli_real_escape_string($CONNEXION, $_POST['message']);
     $response = getAnthropicResponse($user_message);
 
@@ -60,8 +61,14 @@ if (!$_SESSION['conversation_selection_mode'] &&
     saveMessage($conversation_id, 'bot', $response);
     
     // Rediriger pour éviter le renvoi du formulaire
-    header("Location: " . $_SERVER['PHP_SELF']);
+    header("Location: index.php?conversation_id=" . $conversation_id);
     exit();
+}
+
+// Vérifier si nous devons afficher le sélecteur ou une conversation
+if ($conversation_id == 0) {
+    // Nous devons afficher le sélecteur et/ou traiter la sélection
+    selectConversation($user_id, $CONNEXION);
 }
 
 // Générer un nouveau token pour le formulaire
@@ -72,13 +79,14 @@ include 'include/header.php';
 
 <h1>CHAT TPG*</h1>
 
-<?php if ($_SESSION['conversation_selection_mode']): ?>
+<?php if ($conversation_id == 0): ?>
+    <!-- Afficher le sélecteur de conversation -->
     <?php displayConversationSelector($user_id, $CONNEXION); ?>
 <?php else: ?>
+    <!-- Afficher la conversation sélectionnée -->
     <div id="chatbox">
         <?php
         // Afficher l'historique des messages pour la conversation sélectionnée
-        $conversation_id = $_SESSION['selected_conversation_id'];
         $query = $CONNEXION->prepare("
             SELECT sender, message_text, sent_at 
             FROM messages 
@@ -89,24 +97,29 @@ include 'include/header.php';
         $query->execute();
         $result = $query->get_result();
         
-        while ($row = $result->fetch_assoc()) {
-            $sender_class = $row['sender'] === 'user' ? 'user-message' : 'bot-message';
-            $sender = $row['sender'] === 'user' ? 'Vous' : 'Bot';
-            echo "<p class='message $sender_class'>";
-            echo "<strong>$sender :</strong> " . htmlspecialchars($row['message_text']);
-            echo " <em>(" . date('H:i', strtotime($row['sent_at'])) . ")</em>";
-            echo "</p>";
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                $sender_class = $row['sender'] === 'user' ? 'user-message' : 'bot-message';
+                $sender = $row['sender'] === 'user' ? 'Vous' : 'Bot';
+                echo "<p class='message $sender_class'>";
+                echo "<strong>$sender :</strong> " . htmlspecialchars($row['message_text']);
+                echo " <em>(" . date('H:i', strtotime($row['sent_at'])) . ")</em>";
+                echo "</p>";
+            }
+        } else {
+            echo "<p class='no-messages'>Aucun message dans cette conversation. Commencez à discuter !</p>";
         }
         ?>
     </div>
-    <form method="post" action="">
+    <form method="post" action="index.php?conversation_id=<?php echo $conversation_id; ?>">
         <input type="hidden" name="form_token" value="<?php echo $form_token; ?>">
         <input type="text" name="message" placeholder="Tapez votre message..." required>
         <button type="submit">Envoyer</button>
     </form>
     
     <div class="conversation-actions">
-        <a href="?action=change_conversation" class="btn-secondary">Changer de conversation</a>
+        <a href="index.php?action=change_conversation" class="btn-secondary">Changer de conversation</a>
+        <!-- Option pour terminer la conversation pourrait être ajoutée ici -->
     </div>
     
     <style>
@@ -133,6 +146,13 @@ include 'include/header.php';
             background: #e9e9e9;
             transform: translateY(-2px);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .no-messages {
+            text-align: center;
+            color: #777;
+            font-style: italic;
+            padding: 2rem 0;
         }
     </style>
 <?php endif; ?>

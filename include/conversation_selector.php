@@ -20,7 +20,11 @@ function selectConversation($user_id, $connexion) {
             ");
             $query->bind_param('i', $user_id);
             $query->execute();
-            return $connexion->insert_id;
+            $conversation_id = $connexion->insert_id;
+            
+            // Après création, rediriger vers l'index avec le paramètre conversation_id
+            header("Location: index.php?conversation_id=" . $conversation_id);
+            exit();
         } 
         // Si l'utilisateur veut charger une conversation existante
         elseif ($_POST['conversation_action'] === 'load' && isset($_POST['conversation_id'])) {
@@ -36,7 +40,9 @@ function selectConversation($user_id, $connexion) {
             $result = $query->get_result();
             
             if ($result->num_rows > 0) {
-                return $conv_id;
+                // Après sélection, rediriger vers l'index avec le paramètre conversation_id
+                header("Location: index.php?conversation_id=" . $conv_id);
+                exit();
             }
         }
     }
@@ -71,7 +77,7 @@ function displayConversationSelector($user_id, $connexion) {
     ?>
     <div class="conversation-selector">
         <h2>Sélectionner une conversation</h2>
-        <form method="post" action="">
+        <form method="post" action="index.php">
             <div class="selector-options">
                 <div class="option">
                     <input type="radio" id="new_conversation" name="conversation_action" value="new" checked>
@@ -107,7 +113,7 @@ function displayConversationSelector($user_id, $connexion) {
                                     <td><?php echo date('d/m/Y H:i', strtotime($row['started_at'])); ?></td>
                                     <td><?php echo $row['status']; ?></td>
                                     <td><?php echo $row['message_count']; ?></td>
-                                    <td><?php echo htmlspecialchars(substr($row['first_message'], 0, 30) . '...'); ?></td>
+                                    <td><?php echo htmlspecialchars(substr($row['first_message'] ?? '', 0, 30) . '...'); ?></td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>
@@ -138,6 +144,9 @@ function displayConversationSelector($user_id, $connexion) {
             
             newConvRadio.addEventListener('change', toggleConversationList);
             loadConvRadio.addEventListener('change', toggleConversationList);
+            
+            // Vérifier l'état initial
+            toggleConversationList();
         });
     </script>
     
