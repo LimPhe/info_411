@@ -5,10 +5,10 @@ require_once 'include/conversation_selector.php';
 
 session_start();
 
-// Vérifier si l'utilisateur est connecté
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1; // Valeur par défaut pour l'exemple
 
-// Fonction pour empêcher le renvoi du formulaire au refresh
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
+
+
 function preventFormResubmission() {
     if (isset($_SESSION['form_token'])) {
         unset($_SESSION['form_token']);
@@ -18,12 +18,12 @@ function preventFormResubmission() {
     return $token;
 }
 
-// Vérifier si une conversation est spécifiée dans l'URL
+
 $conversation_id = 0;
 if (isset($_GET['conversation_id'])) {
     $conv_id = intval($_GET['conversation_id']);
     
-    // Vérifier que la conversation existe et appartient à l'utilisateur
+
     $query = $CONNEXION->prepare("
         SELECT id FROM conversations 
         WHERE id = ? AND user_id = ?
@@ -37,19 +37,19 @@ if (isset($_GET['conversation_id'])) {
     }
 }
 
-// Créer une nouvelle conversation si demandé
+
 if (isset($_GET['action']) && $_GET['action'] === 'new_conversation') {
     $query = $CONNEXION->prepare("INSERT INTO conversations (user_id) VALUES (?)");
     $query->bind_param('i', $user_id);
     $query->execute();
     $conversation_id = $CONNEXION->insert_id;
     
-    // Rediriger vers la nouvelle conversation
+
     header("Location: index.php?conversation_id=" . $conversation_id);
     exit();
 }
 
-// Traiter l'envoi d'un message uniquement si une conversation est sélectionnée
+
 if ($conversation_id > 0 && 
     $_SERVER['REQUEST_METHOD'] === 'POST' && 
     isset($_POST['message']) && 
@@ -60,21 +60,19 @@ if ($conversation_id > 0 &&
     $user_message = mysqli_real_escape_string($CONNEXION, $_POST['message']);
     $response = getAnthropicResponse($user_message);
 
-    // Enregistrer le message de l'utilisateur
+
     saveMessage($conversation_id, 'user', $user_message);
 
-    // Enregistrer la réponse du bot
     saveMessage($conversation_id, 'bot', $response);
-    
-    // Rediriger pour éviter le renvoi du formulaire
+
     header("Location: index.php?conversation_id=" . $conversation_id);
     exit();
 }
 
-// Générer un nouveau token pour le formulaire
+
 $form_token = preventFormResubmission();
 
-// Récupérer toutes les conversations de l'utilisateur
+
 $query = $CONNEXION->prepare("
     SELECT 
         c.id, 
@@ -98,7 +96,7 @@ include 'include/header.php';
 </header>
 
 <div class="app-container">
-    <!-- Sidebar avec la liste des conversations -->
+
     <div class="sidebar">
         <div class="sidebar-header">
             <h2>Conversations</h2>
@@ -136,13 +134,13 @@ include 'include/header.php';
         </div>
     </div>
 
-    <!-- Zone principale avec les messages ou l'écran d'accueil -->
+
     <div class="main-content">
         <?php if ($conversation_id > 0): ?>
-            <!-- Afficher la conversation sélectionnée -->
+
             <div id="chatbox">
                 <?php
-                // Afficher l'historique des messages pour la conversation sélectionnée
+
                 $query = $CONNEXION->prepare("
                     SELECT sender, message_text, sent_at 
                     FROM messages 
@@ -185,7 +183,7 @@ include 'include/header.php';
                 </button>
             </form>
         <?php else: ?>
-            <!-- Écran d'accueil quand aucune conversation n'est sélectionnée -->
+
             <div class="welcome-screen">
                 <div class="welcome-content">
                     <h2>Bienvenue sur CHAT TPG*</h2>
@@ -198,7 +196,7 @@ include 'include/header.php';
 </div>
 
 <script>
-    // Faire défiler automatiquement vers le bas du chat
+
     const chatbox = document.getElementById('chatbox');
     if (chatbox) {
         chatbox.scrollTop = chatbox.scrollHeight;
