@@ -76,3 +76,25 @@ function saveMessage($conversation_id, $sender, $message_text) {
     $query->bind_param('iss', $conversation_id, $sender, $message_text);
     $query->execute();
 }
+
+function saveMessage($conversation_id, $sender, $message) {
+    global $CONNEXION;
+    $query = $CONNEXION->prepare("
+        INSERT INTO messages (conversation_id, sender, message_text) 
+        VALUES (?, ?, ?)
+    ");
+    $query->bind_param('iss', $conversation_id, $sender, $message);
+    return $query->execute();
+}
+
+// Fonction pour terminer une conversation
+function endConversation($conversation_id) {
+    global $CONNEXION;
+    $query = $CONNEXION->prepare("
+        UPDATE conversations 
+        SET ended_at = CURRENT_TIMESTAMP 
+        WHERE id = ?
+    ");
+    $query->bind_param('i', $conversation_id);
+    return $query->execute();
+}
