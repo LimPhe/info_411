@@ -1,7 +1,6 @@
 <?php
-require('../connect.php');
-echo '<p>OK<p>'
->>>>>>> 2c902c391f859cb2c0fe811ec31306ab45ec8ae6
+require __DIR__ . '/../connect.php';
+
 $CONNEXION = mysqli_connect(SERVEUR_BD, LOGIN_BD, PASS_BD);
 // Connexion au serveur de bases de données
 if (mysqli_connect_errno()) {
