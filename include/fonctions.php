@@ -69,14 +69,6 @@ function getOrCreateConversation($user_id) {
     }
 }
 
-// Fonction pour enregistrer un message
-function saveMessage($conversation_id, $sender, $message_text) {
-    global $CONNEXION;
-    $query = $CONNEXION->prepare("INSERT INTO messages (conversation_id, sender, message_text) VALUES (?, ?, ?)");
-    $query->bind_param('iss', $conversation_id, $sender, $message_text);
-    $query->execute();
-}
-
 function saveMessage($conversation_id, $sender, $message) {
     global $CONNEXION;
     $query = $CONNEXION->prepare("
