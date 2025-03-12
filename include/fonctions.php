@@ -7,7 +7,7 @@ function getAnthropicResponse($user_message) {
 
     // Préparer les données à envoyer à l'API
     $data = [
-        'model' => 'claude-3-opus-20240229', // Modèle à utiliser (vérifie les modèles disponibles dans la doc)
+        'model' => 'claude-3.7-sonnet-20250219', // Modèle à utiliser (vérifie les modèles disponibles dans la doc)
         'max_tokens' => 1000, // Limite de tokens pour la réponse
         'messages' => [
             [

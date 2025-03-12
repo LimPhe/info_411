@@ -1,12 +1,11 @@
 <?php
 require_once 'include/connexion.php';
 require_once 'include/fonctions.php';
-// Inclure le nouveau fichier contenant les fonctions de sélection de conversation
 require_once 'include/conversation_selector.php';
 
 session_start();
 
-// Vérifier si l'utilisateur est connecté (à adapter selon votre système d'authentification)
+// Vérifier si l'utilisateur est connecté
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1; // Valeur par défaut pour l'exemple
 
 // Fonction pour empêcher le renvoi du formulaire au refresh
@@ -38,9 +37,16 @@ if (isset($_GET['conversation_id'])) {
     }
 }
 
-// Si l'utilisateur a explicitement demandé à changer de conversation
-if (isset($_GET['action']) && $_GET['action'] === 'change_conversation') {
-    $conversation_id = 0;  // Forcer l'affichage du sélecteur
+// Créer une nouvelle conversation si demandé
+if (isset($_GET['action']) && $_GET['action'] === 'new_conversation') {
+    $query = $CONNEXION->prepare("INSERT INTO conversations (user_id) VALUES (?)");
+    $query->bind_param('i', $user_id);
+    $query->execute();
+    $conversation_id = $CONNEXION->insert_id;
+    
+    // Rediriger vers la nouvelle conversation
+    header("Location: index.php?conversation_id=" . $conversation_id);
+    exit();
 }
 
 // Traiter l'envoi d'un message uniquement si une conversation est sélectionnée
@@ -65,99 +71,131 @@ if ($conversation_id > 0 &&
     exit();
 }
 
-// Vérifier si nous devons afficher le sélecteur ou une conversation
-if ($conversation_id == 0) {
-    // Nous devons afficher le sélecteur et/ou traiter la sélection
-    selectConversation($user_id, $CONNEXION);
-}
-
 // Générer un nouveau token pour le formulaire
 $form_token = preventFormResubmission();
+
+// Récupérer toutes les conversations de l'utilisateur
+$query = $CONNEXION->prepare("
+    SELECT 
+        c.id, 
+        c.started_at, 
+        IFNULL(c.ended_at, 'En cours') as status,
+        (SELECT COUNT(*) FROM messages WHERE conversation_id = c.id) as message_count,
+        (SELECT LEFT(message_text, 30) FROM messages WHERE conversation_id = c.id ORDER BY sent_at ASC LIMIT 1) as first_message
+    FROM conversations c
+    WHERE c.user_id = ?
+    ORDER BY c.started_at DESC
+");
+$query->bind_param('i', $user_id);
+$query->execute();
+$conversations = $query->get_result();
 
 include 'include/header.php';
 ?>
 
-<h1>CHAT TPG*</h1>
+<header>
+    <h1>CHAT TPG*</h1>
+</header>
 
-<?php if ($conversation_id == 0): ?>
-    <!-- Afficher le sélecteur de conversation -->
-    <?php displayConversationSelector($user_id, $CONNEXION); ?>
-<?php else: ?>
-    <!-- Afficher la conversation sélectionnée -->
-    <div id="chatbox">
-        <?php
-        // Afficher l'historique des messages pour la conversation sélectionnée
-        $query = $CONNEXION->prepare("
-            SELECT sender, message_text, sent_at 
-            FROM messages 
-            WHERE conversation_id = ? 
-            ORDER BY sent_at
-        ");
-        $query->bind_param('i', $conversation_id);
-        $query->execute();
-        $result = $query->get_result();
+<div class="app-container">
+    <!-- Sidebar avec la liste des conversations -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Conversations</h2>
+            <a href="index.php?action=new_conversation" class="btn-new">
+                <span>+</span> Nouvelle
+            </a>
+        </div>
         
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $sender_class = $row['sender'] === 'user' ? 'user-message' : 'bot-message';
-                $sender = $row['sender'] === 'user' ? 'Vous' : 'Bot';
-                echo "<p class='message $sender_class'>";
-                echo "<strong>$sender :</strong> " . htmlspecialchars($row['message_text']);
-                echo " <em>(" . date('H:i', strtotime($row['sent_at'])) . ")</em>";
-                echo "</p>";
-            }
-        } else {
-            echo "<p class='no-messages'>Aucun message dans cette conversation. Commencez à discuter !</p>";
-        }
-        ?>
+        <div class="conversation-list">
+            <?php if ($conversations->num_rows > 0): ?>
+                <?php while ($row = $conversations->fetch_assoc()): ?>
+                    <a href="index.php?conversation_id=<?php echo $row['id']; ?>" 
+                       class="conversation-item <?php echo ($conversation_id == $row['id']) ? 'active' : ''; ?>">
+                        <div class="conv-info">
+                            <span class="conv-date"><?php echo date('d/m H:i', strtotime($row['started_at'])); ?></span>
+                            <span class="conv-messages"><?php echo $row['message_count']; ?> messages</span>
+                        </div>
+                        <p class="conv-preview">
+                            <?php 
+                            $preview = $row['first_message'] ?? 'Nouvelle conversation';
+                            echo htmlspecialchars(substr($preview, 0, 30) . (strlen($preview) > 30 ? '...' : '')); 
+                            ?>
+                        </p>
+                        <span class="conv-status <?php echo ($row['status'] == 'En cours') ? 'status-active' : 'status-closed'; ?>">
+                            <?php echo $row['status']; ?>
+                        </span>
+                    </a>
+                <?php endwhile; ?>
+            <?php else: ?>
+                <div class="no-conversations">
+                    <p>Aucune conversation</p>
+                    <p>Cliquez sur "Nouvelle" pour commencer</p>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
-    <form method="post" action="index.php?conversation_id=<?php echo $conversation_id; ?>">
-        <input type="hidden" name="form_token" value="<?php echo $form_token; ?>">
-        <input type="text" name="message" placeholder="Tapez votre message..." required>
-        <button type="submit">Envoyer</button>
-    </form>
-    
-    <div class="conversation-actions">
-        <a href="index.php?action=change_conversation" class="btn-secondary">Changer de conversation</a>
-        <!-- Option pour terminer la conversation pourrait être ajoutée ici -->
-    </div>
-    
-    <style>
-        .conversation-actions {
-            width: 90%;
-            max-width: 800px;
-            margin: 1rem auto;
-            text-align: center;
-        }
-        
-        .btn-secondary {
-            display: inline-block;
-            padding: 0.6rem 1.2rem;
-            background: #f5f5f5;
-            color: #2a5298;
-            border: 1px solid #ddd;
-            border-radius: 25px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-secondary:hover {
-            background: #e9e9e9;
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-        
-        .no-messages {
-            text-align: center;
-            color: #777;
-            font-style: italic;
-            padding: 2rem 0;
-        }
-    </style>
-<?php endif; ?>
 
-<?php include 'include/footer.php'; ?>
+    <!-- Zone principale avec les messages ou l'écran d'accueil -->
+    <div class="main-content">
+        <?php if ($conversation_id > 0): ?>
+            <!-- Afficher la conversation sélectionnée -->
+            <div id="chatbox">
+                <?php
+                // Afficher l'historique des messages pour la conversation sélectionnée
+                $query = $CONNEXION->prepare("
+                    SELECT sender, message_text, sent_at 
+                    FROM messages 
+                    WHERE conversation_id = ? 
+                    ORDER BY sent_at
+                ");
+                $query->bind_param('i', $conversation_id);
+                $query->execute();
+                $result = $query->get_result();
+                
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        $sender = $row['sender'] === 'user' ? 'Vous' : 'Bot';
+                        $message_class = $row['sender'] === 'user' ? 'user-message' : 'bot-message';
+                        ?>
+                        <div class="message-container <?php echo $message_class; ?>">
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <strong><?php echo $sender; ?></strong>
+                                    <span class="message-time"><?php echo date('H:i', strtotime($row['sent_at'])); ?></span>
+                                </div>
+                                <p><?php echo nl2br(htmlspecialchars($row['message_text'])); ?></p>
+                            </div>
+                        </div>
+                        <?php
+                    }
+                } else {
+                    echo "<div class='welcome-message'>Commencez à discuter avec le bot!</div>";
+                }
+                ?>
+            </div>
+            <form method="post" action="index.php?conversation_id=<?php echo $conversation_id; ?>" class="message-form">
+                <input type="hidden" name="form_token" value="<?php echo $form_token; ?>">
+                <input type="text" name="message" placeholder="Tapez votre message..." required autofocus>
+                <button type="submit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    </svg>
+                </button>
+            </form>
+        <?php else: ?>
+            <!-- Écran d'accueil quand aucune conversation n'est sélectionnée -->
+            <div class="welcome-screen">
+                <div class="welcome-content">
+                    <h2>Bienvenue sur CHAT TPG*</h2>
+                    <p>Sélectionnez une conversation dans la barre latérale ou créez-en une nouvelle pour commencer à discuter avec le bot.</p>
+                    <a href="index.php?action=new_conversation" class="btn-primary">Démarrer une nouvelle conversation</a>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
 
 <script>
     // Faire défiler automatiquement vers le bas du chat
@@ -167,5 +205,4 @@ include 'include/header.php';
     }
 </script>
 
-</body>
-</html>
+<?php include 'include/footer.php'; ?>
