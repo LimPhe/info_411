@@ -9,7 +9,7 @@ function getAnthropicResponse($user_message) {
     $data = [
         'model' => 'claude-3-7-sonnet-20250219', // Modèle à utiliser (vérifie les modèles disponibles dans la doc)
         'max_tokens' => 1000, // Limite de tokens pour la réponse
-        'system="Tu t\'appelles BillyIA"', # <-- role prompt
+        'system'=>"Tu t\'appelles BillyIA", # <-- role prompt
         'messages' => [
             [
                 'role' => 'user',
