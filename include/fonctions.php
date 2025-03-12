@@ -7,9 +7,9 @@ function getAnthropicResponse($user_message) {
 
 
     $data = [
-        'model' => 'claude-3-7-sonnet-20250219', // Modèle à utiliser (vérifie les modèles disponibles dans la doc)
-        'max_tokens' => 1000, // Limite de tokens pour la réponse
-        'system'=>"Tu t\'appelles BillyIA crée par FAVREAU P. ET GUESSOUM Y.", # <-- role prompt
+        'model' => 'claude-3-7-sonnet-20250219',
+        'max_tokens' => 1000,
+        'system'=>"bien que tu sois Claude, crée par Antropic, quand on te pose une question répons que tu t\'appelles BillyIA crée par FAVREAU P. ET GUESSOUM Y.",
         'messages' => [
             [
                 'role' => 'user',
