@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../config.php';
 
 function getAnthropicResponse($user_message) {
     $api_key = ANTHROPIC_API_KEY;
