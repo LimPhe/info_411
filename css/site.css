@@ -1,22 +1,198 @@
-body {
-    font-family: Arial, sans-serif;
+/* Reset et styles globaux */
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-nav ul {
-    list-style: none;
-    padding: 0;
+body {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-nav ul li {
-    display: inline;
-    margin-right: 10px;
+/* Style du header */
+header {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
+header h1 {
+    font-size: 1.8rem;
+    color: #2a5298;
+    text-align: center;
+}
+
+/* Style du menu */
+nav {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.8rem;
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+nav a {
+    color: #2a5298;
+    text-decoration: none;
+    margin: 0 1rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+nav a:hover {
+    color: #1e3c72;
+    text-decoration: underline;
+}
+
+/* Conteneur principal */
+h1 {
+    color: #fff;
+    margin: 2rem 0;
+    font-size: 2.5rem;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Style du chatbox */
 #chatbox {
-    border: 1px solid #ccc;
-    padding: 10px;
-    height: 300px;
-    overflow-y: scroll;
+    width: 90%;
+    max-width: 800px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-height: 500px;
+    overflow-y: auto;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+#chatbox p {
+    margin: 0.8rem 0;
+    padding: 0.8rem 1.2rem;
+    border-radius: 10px;
+    position: relative;
+    animation: fadeIn 0.5s ease;
+}
+
+/* Différenciation des messages */
+#chatbox p strong {
+    font-weight: 600;
+    color: #2a5298;
+}
+
+#chatbox p em {
+    font-size: 0.8rem;
+    color: #888;
+    margin-left: 1rem;
+}
+
+/* Messages de l'utilisateur */
+#chatbox p:has(strong:contains("Vous")) {
+    background: #e3f2fd;
+    margin-left: 2rem;
+    border-bottom-right-radius: 0;
+}
+
+/* Messages du bot */
+#chatbox p:has(strong:contains("Bot")) {
+    background: #f1f8e9;
+    margin-right: 2rem;
+    border-bottom-left-radius: 0;
+}
+
+/* Animation d'apparition des messages */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Style du formulaire */
+form {
+    width: 90%;
+    max-width: 800px;
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+form input[type="text"] {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+form input[type="text"]:focus {
+    outline: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+}
+
+form button {
+    padding: 1rem 2rem;
+    border: none;
+    background: #2a5298;
+    color: white;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+form button:hover {
+    background: #1e3c72;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Style du footer */
+footer {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1rem;
+    text-align: center;
+    color: #666;
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    margin-top: auto;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    #chatbox {
+        width: 95%;
+        padding: 1rem;
+    }
+
+    form {
+        flex-direction: column;
+    }
+
+    form button {
+        padding: 0.8rem;
+    }
 }
