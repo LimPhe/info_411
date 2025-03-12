@@ -7,8 +7,9 @@ function getAnthropicResponse($user_message) {
 
     // Préparer les données à envoyer à l'API
     $data = [
-        'model' => 'claude-3.7-sonnet-20250219', // Modèle à utiliser (vérifie les modèles disponibles dans la doc)
+        'model' => 'claude-3-7-sonnet-20250219', // Modèle à utiliser (vérifie les modèles disponibles dans la doc)
         'max_tokens' => 1000, // Limite de tokens pour la réponse
+        'system="Tu t\'appelles BillyIA"', # <-- role prompt
         'messages' => [
             [
                 'role' => 'user',
@@ -67,14 +68,6 @@ function getOrCreateConversation($user_id) {
         $query->execute();
         return $CONNEXION->insert_id;
     }
-}
-
-// Fonction pour enregistrer un message
-function saveMessage($conversation_id, $sender, $message_text) {
-    global $CONNEXION;
-    $query = $CONNEXION->prepare("INSERT INTO messages (conversation_id, sender, message_text) VALUES (?, ?, ?)");
-    $query->bind_param('iss', $conversation_id, $sender, $message_text);
-    $query->execute();
 }
 
 function saveMessage($conversation_id, $sender, $message) {
