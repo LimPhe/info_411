@@ -1,6 +1,8 @@
 <?php
 require_once 'include/connexion.php';
 require_once 'include/fonctions.php';
+// Inclure le nouveau fichier contenant les fonctions de sélection de conversation
+require_once 'include/conversation_selector.php'; // Créez ce fichier avec le code de l'artefact précédent
 
 session_start();
 
@@ -17,42 +19,37 @@ function preventFormResubmission() {
     return $token;
 }
 
-// Gestion des conversations
-function getCurrentConversation($user_id, $connexion) {
-    // Vérifier s'il existe une conversation active (non terminée)
-    $query = $connexion->prepare("
-        SELECT id 
-        FROM conversations 
-        WHERE user_id = ? AND ended_at IS NULL 
-        ORDER BY started_at DESC 
-        LIMIT 1
-    ");
-    $query->bind_param('i', $user_id);
-    $query->execute();
-    $result = $query->get_result();
-    
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        return $row['id'];
-    }
-    
-    // Si aucune conversation active, en créer une nouvelle
-    $query = $connexion->prepare("
-        INSERT INTO conversations (user_id) 
-        VALUES (?)
-    ");
-    $query->bind_param('i', $user_id);
-    $query->execute();
-    return $connexion->insert_id;
+// Vérifier si une conversation est déjà sélectionnée dans la session
+if (!isset($_SESSION['selected_conversation_id'])) {
+    $_SESSION['conversation_selection_mode'] = true;
+    $_SESSION['selected_conversation_id'] = 0;
 }
 
-// Si un message est envoyé
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && 
+// Appliquer la sélection de conversation si nous sommes en mode sélection
+if (isset($_SESSION['conversation_selection_mode']) && $_SESSION['conversation_selection_mode']) {
+    $selected_conversation = selectConversation($user_id, $CONNEXION);
+    
+    if ($selected_conversation > 0) {
+        // Une conversation a été sélectionnée ou créée
+        $_SESSION['selected_conversation_id'] = $selected_conversation;
+        $_SESSION['conversation_selection_mode'] = false;
+    }
+}
+
+// Si l'utilisateur a explicitement demandé à changer de conversation
+if (isset($_GET['action']) && $_GET['action'] === 'change_conversation') {
+    $_SESSION['conversation_selection_mode'] = true;
+    $_SESSION['selected_conversation_id'] = 0;
+}
+
+// Traiter l'envoi d'un message uniquement si une conversation est sélectionnée
+if (!$_SESSION['conversation_selection_mode'] && 
+    $_SERVER['REQUEST_METHOD'] === 'POST' && 
     isset($_POST['message']) && 
     isset($_POST['form_token']) && 
     $_POST['form_token'] === $_SESSION['form_token']) {
     
-    $conversation_id = getCurrentConversation($user_id, $CONNEXION);
+    $conversation_id = $_SESSION['selected_conversation_id'];
     $user_message = mysqli_real_escape_string($CONNEXION, $_POST['message']);
     $response = getAnthropicResponse($user_message);
 
@@ -70,63 +67,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
 // Générer un nouveau token pour le formulaire
 $form_token = preventFormResubmission();
 
-// Obtenir la conversation actuelle
-$conversation_id = getCurrentConversation($user_id, $CONNEXION);
+include 'include/header.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot</title>
-    <link rel="stylesheet" href="css/site.css">
-    <style>
-        #chatbox {
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
-        }
-        .message {
-            margin: 5px 0;
-            padding: 5px;
-        }
-        .user-message {
-            background-color: #e3f2fd;
-        }
-        .bot-message {
-            background-color: #f5f5f5;
-        }
-    </style>
-</head>
-<body>
-    <?php include 'include/header.php'; ?>
+<h1>CHAT TPG*</h1>
 
-    <h1>CHAT TPG*</h1>
+<?php if ($_SESSION['conversation_selection_mode']): ?>
+    <?php displayConversationSelector($user_id, $CONNEXION); ?>
+<?php else: ?>
     <div id="chatbox">
         <?php
-        // Afficher l'historique des messages pour la conversation actuelle
-        if (isset($conversation_id)) {
-            $query = $CONNEXION->prepare("
-                SELECT sender, message_text, sent_at 
-                FROM messages 
-                WHERE conversation_id = ? 
-                ORDER BY sent_at
-            ");
-            $query->bind_param('i', $conversation_id);
-            $query->execute();
-            $result = $query->get_result();
-            
-            while ($row = $result->fetch_assoc()) {
-                $sender_class = $row['sender'] === 'user' ? 'user-message' : 'bot-message';
-                $sender = $row['sender'] === 'user' ? 'Vous' : 'Bot';
-                echo "<div class='message $sender_class'>";
-                echo "<strong>$sender :</strong> " . htmlspecialchars($row['message_text']);
-                echo " <em>(" . date('H:i', strtotime($row['sent_at'])) . ")</em>";
-                echo "</div>";
-            }
+        // Afficher l'historique des messages pour la conversation sélectionnée
+        $conversation_id = $_SESSION['selected_conversation_id'];
+        $query = $CONNEXION->prepare("
+            SELECT sender, message_text, sent_at 
+            FROM messages 
+            WHERE conversation_id = ? 
+            ORDER BY sent_at
+        ");
+        $query->bind_param('i', $conversation_id);
+        $query->execute();
+        $result = $query->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $sender_class = $row['sender'] === 'user' ? 'user-message' : 'bot-message';
+            $sender = $row['sender'] === 'user' ? 'Vous' : 'Bot';
+            echo "<p class='message $sender_class'>";
+            echo "<strong>$sender :</strong> " . htmlspecialchars($row['message_text']);
+            echo " <em>(" . date('H:i', strtotime($row['sent_at'])) . ")</em>";
+            echo "</p>";
         }
         ?>
     </div>
@@ -135,13 +104,48 @@ $conversation_id = getCurrentConversation($user_id, $CONNEXION);
         <input type="text" name="message" placeholder="Tapez votre message..." required>
         <button type="submit">Envoyer</button>
     </form>
+    
+    <div class="conversation-actions">
+        <a href="?action=change_conversation" class="btn-secondary">Changer de conversation</a>
+    </div>
+    
+    <style>
+        .conversation-actions {
+            width: 90%;
+            max-width: 800px;
+            margin: 1rem auto;
+            text-align: center;
+        }
+        
+        .btn-secondary {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            background: #f5f5f5;
+            color: #2a5298;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9e9e9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+<?php endif; ?>
 
-    <?php include 'include/footer.php'; ?>
-    <script src="js/monscriptquitue.js"></script>
-    <script>
-        // Faire défiler automatiquement vers le bas du chat
-        const chatbox = document.getElementById('chatbox');
+<?php include 'include/footer.php'; ?>
+
+<script>
+    // Faire défiler automatiquement vers le bas du chat
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
         chatbox.scrollTop = chatbox.scrollHeight;
-    </script>
+    }
+</script>
+
 </body>
 </html>
