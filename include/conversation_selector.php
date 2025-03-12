@@ -1,19 +1,16 @@
 <?php
-/**
- * Fonction qui permet à l'utilisateur de choisir entre charger une conversation existante
- * ou en créer une nouvelle
- * 
- * @param int $user_id ID de l'utilisateur actuel
- * @param mysqli $connexion Connexion à la base de données
- * @return int ID de la conversation sélectionnée ou créée
- */
+
+@param int 
+@param mysqli 
+@return int 
+ 
 function selectConversation($user_id, $connexion) {
-    // Si la méthode est POST et que le formulaire de sélection a été soumis
+    
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['conversation_action'])) {
         
-        // Si l'utilisateur veut créer une nouvelle conversation
+        
         if ($_POST['conversation_action'] === 'new') {
-            // Créer une nouvelle conversation
+            
             $query = $connexion->prepare("
                 INSERT INTO conversations (user_id) 
                 VALUES (?)
@@ -22,15 +19,15 @@ function selectConversation($user_id, $connexion) {
             $query->execute();
             $conversation_id = $connexion->insert_id;
             
-            // Après création, rediriger vers l'index avec le paramètre conversation_id
+            
             header("Location: index.php?conversation_id=" . $conversation_id);
             exit();
         } 
-        // Si l'utilisateur veut charger une conversation existante
+        
         elseif ($_POST['conversation_action'] === 'load' && isset($_POST['conversation_id'])) {
             $conv_id = intval($_POST['conversation_id']);
             
-            // Vérifier que la conversation existe et appartient à l'utilisateur
+            
             $query = $connexion->prepare("
                 SELECT id FROM conversations 
                 WHERE id = ? AND user_id = ?
@@ -40,15 +37,13 @@ function selectConversation($user_id, $connexion) {
             $result = $query->get_result();
             
             if ($result->num_rows > 0) {
-                // Après sélection, rediriger vers l'index avec le paramètre conversation_id
                 header("Location: index.php?conversation_id=" . $conv_id);
                 exit();
             }
         }
     }
     
-    // Si aucune action n'a été effectuée, afficher le formulaire de sélection
-    // et retourner 0 pour indiquer qu'aucune conversation n'est encore sélectionnée
+
     return 0;
 }
 
@@ -59,7 +54,7 @@ function selectConversation($user_id, $connexion) {
  * @param mysqli $connexion Connexion à la base de données
  */
 function displayConversationSelector($user_id, $connexion) {
-    // Récupérer toutes les conversations de l'utilisateur
+
     $query = $connexion->prepare("
         SELECT c.id, 
                c.started_at, 
