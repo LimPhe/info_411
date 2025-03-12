@@ -31,9 +31,8 @@ if (isset($_POST['message'])) {
 </head>
 <body>
     <?php include 'include/header.php'; ?>
-    <?php include 'include/menu.php'; ?>
 
-    <h1>Bienvenue sur notre Chatbot</h1>
+    <h1>CHAT TPG*</h1>
     <div id="chatbox">
         <?php
         // Afficher l'historique des messages pour la conversation actuelle
