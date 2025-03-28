@@ -31,6 +31,10 @@ CREATE TABLE messages (
     FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
 
+-- Insertion d'un utilisateur de test
+INSERT INTO users (username, email) VALUES 
+('test_user', 'test@example.com');
+
 CREATE USER 'userbdd'@'%' IDENTIFIED BY 'bdd';
 GRANT ALL PRIVILEGES ON unconnected.* TO 'userbdd'@'%';
 FLUSH PRIVILEGES;
