@@ -30,3 +30,9 @@ CREATE TABLE messages (
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
 );
+
+CREATE USER 'userbdd'@'%' IDENTIFIED BY 'bdd';
+GRANT ALL PRIVILEGES ON unconnected.* TO 'userbdd'@'%';
+FLUSH PRIVILEGES;
+
+GRANT ALL PRIVILEGES ON chatbot_db.* TO 'userbdd'@'%';
