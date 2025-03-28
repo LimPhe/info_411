@@ -5,23 +5,10 @@ require_once 'include/conversation_selector.php';
 
 session_start();
 
-// Make sure the user exists before proceeding
+
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
 
-// Check if user exists and create if needed
-$check_user = $CONNEXION->prepare("SELECT id FROM users WHERE id = ?");
-$check_user->bind_param('i', $user_id);
-$check_user->execute();
-$user_result = $check_user->get_result();
 
-if ($user_result->num_rows == 0) {
-    // User doesn't exist, create a default user
-    $create_user = $CONNEXION->prepare("INSERT INTO users (id, username, email) VALUES (?, 'default_user', 'default@example.com')");
-    $create_user->bind_param('i', $user_id);
-    $create_user->execute();
-}
-
-// Continue with the rest of your code
 function preventFormResubmission() {
     if (isset($_SESSION['form_token'])) {
         unset($_SESSION['form_token']);
