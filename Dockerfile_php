@@ -2,7 +2,7 @@ FROM php:8.3-apache
 
 RUN cp "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
 RUN apt update  && \
-    upgrade -y && \
+    apt upgrade -y && \
     install -y vim nano curl git wget links
 
 
@@ -11,8 +11,8 @@ WORKDIR /var/www/
 RUN git clone https://github.com/LimPhe/info_411
 # Installation des extensions PHP
 RUN docker-php-ext-install mysqli pdo pdo_mysql 
-
+EXPOSE 80
 # Si vous avez besoin d'activer le module rewrite (courant pour les frameworks PHP)
 # RUN a2enmod rewrite && service apache2 restart
-
+CMD ["tail", "-f", "/dev/null"]
 # Vous pouvez ajouter d'autres configurations PHP ou Apache icis

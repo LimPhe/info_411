@@ -18,7 +18,7 @@ services:
       - app_network
 
   app:
-    image: tata:8.3-apache
+    image: kaguyu/c_monphp
     build:
       context: .
       dockerfile: Dockerfile_php
@@ -33,7 +33,7 @@ services:
       - app_network
 
   ubuntu:
-    image: toto:latest
+    image: kaguyu/c_monubuntu
     build:
       context: .  # Le Dockerfile se trouve dans le répertoire courant
       dockerfile: Dockerfile_ubuntu # Nom du fichier Dockerfile (par défaut Dockerfile)
