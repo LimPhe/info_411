@@ -1,0 +1,9 @@
+FROM ubuntu:latest
+
+# Installation des packages nécessaires
+RUN apt-get update && \
+    apt-get install -y vim nano git links curl wget telnet dnsutils iproute2 net-tools mysql-client && \
+    rm -rf /var/lib/apt/lists/*
+
+# Commande pour maintenir le conteneur actif
+CMD ["tail", "-f", "/dev/null"]

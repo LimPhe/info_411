@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:latest
+    container_name: c_maria
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_USER: userbdd
+      MARIADB_PASSWORD: bdd
+      MARIADB_DATABASE: chatbot_db
+      MARIADB_ROOT_PASSWORD: root
+    volumes:
+      - ./bd_data:/var/lib/mysql
+      - C:/xampp/htdocs/info_411/sql:/sql/
+    networks:
+      - app_network
+
+  app:
+    image: tata:8.3-apache
+    build:
+      context: .
+      dockerfile: Dockerfile_php
+    container_name: c_php
+    ports:
+      - "80:80"
+    volumes:
+      - C:/xampp/htdocs/info_411:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - app_network
+
+  ubuntu:
+    image: toto:latest
+    build:
+      context: .  # Le Dockerfile se trouve dans le répertoire courant
+      dockerfile: Dockerfile_ubuntu # Nom du fichier Dockerfile (par défaut Dockerfile)
+    container_name: c_ubuntu
+    tty: true
+    stdin_open: true
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
