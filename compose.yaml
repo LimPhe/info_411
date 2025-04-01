@@ -12,7 +12,7 @@ services:
       MARIADB_DATABASE: chatbot_db
       MARIADB_ROOT_PASSWORD: root
     volumes:
-      - ./bd_data:/var/lib/mysql
+      - ../bd_data:/var/lib/mysql
       - C:/xampp/htdocs/info_411/sql:/sql/
     networks:
       - app_network
