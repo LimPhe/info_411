@@ -13,7 +13,7 @@ services:
       MARIADB_ROOT_PASSWORD: root
     volumes:
       - ../bd_data:/var/lib/mysql
-      - C:/xampp/htdocs/info_411/sql:/sql/
+      - ./sql:/sql/
     networks:
       - app_network
 
@@ -26,7 +26,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - C:/xampp/htdocs/info_411:/var/www/html
+      - .:/var/www/html
     depends_on:
       - db
     networks:
